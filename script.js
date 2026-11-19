@@ -19,7 +19,7 @@ links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
 const tabs = document.querySelectorAll('.tab');
 const panels = document.querySelectorAll('.panel');
 function showTab(id) {
-  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  tabs.forEach(t => { const on = t.dataset.tab === id; t.classList.toggle('active', on); t.setAttribute('aria-selected', String(on)); });
   panels.forEach(p => p.classList.toggle('active', p.dataset.panel === id));
 }
 tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
@@ -100,3 +100,47 @@ document.querySelectorAll('.boat-media').forEach(m => {
     setTimeout(() => { main.src = t.dataset.src; main.onload = () => main.classList.remove('swap'); }, 200);
   }));
 });
+
+// Tarifas: formato de precio, precio por pescador y reserva por WhatsApp con mensaje listo
+(() => {
+  const en = document.documentElement.lang === 'en';
+  const waBase = (document.querySelector('.wa-float') || {}).href || '';
+  const fmt = n => n.toLocaleString(en ? 'en-US' : 'es-MX');
+  document.querySelectorAll('.panel').forEach(panel => {
+    const tab = document.querySelector('.tab[data-tab="' + panel.dataset.panel + '"]');
+    const boat = tab ? tab.textContent.split('\u00b7')[0].trim() : '';
+    panel.querySelectorAll('.card').forEach(card => {
+      const price = card.querySelector('.price');
+      const small = price.querySelector('small');
+      const m = price.firstChild.textContent.match(/MXN\s*([\d,]+)/);
+      if (!m) return;
+      const amount = parseInt(m[1].replace(/,/g, ''), 10);
+      price.firstChild.textContent = '$' + m[1];
+      const cur = document.createElement('span');
+      cur.className = 'cur';
+      cur.textContent = 'MXN';
+      price.insertBefore(cur, small);
+      const cap = (card.textContent.match(/(?:Hasta|Up to)\s+(\d+)/) || [])[1];
+      const isBoat = small && /barco|boat/i.test(small.textContent);
+      if (cap && isBoat) {
+        const p = document.createElement('p');
+        p.className = 'per';
+        p.textContent = en
+          ? '\u2248 $' + fmt(Math.round(amount / cap)) + ' per angler with a full boat'
+          : '\u2248 $' + fmt(Math.round(amount / cap)) + ' por pescador con el barco lleno';
+        price.after(p);
+      }
+      const btn = card.querySelector('.btn');
+      if (btn && waBase) {
+        const hrs = card.querySelector('.card-hrs').textContent.trim();
+        const name = card.querySelector('h3').textContent.trim();
+        const msg = en
+          ? 'Hi, I\u2019d like to book the ' + boat + ' \u2014 ' + name + ' (' + hrs + ')'
+          : 'Hola, quiero reservar el ' + boat + ' \u2014 ' + name + ' (' + hrs + ')';
+        btn.href = waBase.split('?')[0] + '?text=' + encodeURIComponent(msg);
+        btn.target = '_blank';
+        btn.rel = 'noopener';
+      }
+    });
+  });
+})();
