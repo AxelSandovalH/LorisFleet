@@ -89,3 +89,14 @@ const spy = new IntersectionObserver(es => es.forEach(e => {
   }
 }), { rootMargin: '-45% 0px -50% 0px' });
 Object.keys(linkFor).forEach(id => { const s = document.getElementById(id); if (s) spy.observe(s); });
+
+// Flota: miniaturas que cambian la foto principal
+document.querySelectorAll('.boat-media').forEach(m => {
+  const main = m.querySelector('.boat-img img');
+  m.querySelectorAll('.thumb').forEach(t => t.addEventListener('click', () => {
+    if (t.classList.contains('active')) return;
+    m.querySelectorAll('.thumb').forEach(x => x.classList.toggle('active', x === t));
+    main.classList.add('swap');
+    setTimeout(() => { main.src = t.dataset.src; main.onload = () => main.classList.remove('swap'); }, 200);
+  }));
+});
