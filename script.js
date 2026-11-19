@@ -101,10 +101,10 @@ document.querySelectorAll('.boat-media').forEach(m => {
   }));
 });
 
-// Tarifas: formato de precio, precio por pescador y reserva por WhatsApp con mensaje listo
+// Tarifas: formato de precio y precio por pescador; recoge las salidas para el motor de reservas
+const TRIPS = {};
 (() => {
   const en = document.documentElement.lang === 'en';
-  const waBase = (document.querySelector('.wa-float') || {}).href || '';
   const fmt = n => n.toLocaleString(en ? 'en-US' : 'es-MX');
   document.querySelectorAll('.panel').forEach(panel => {
     const tab = document.querySelector('.tab[data-tab="' + panel.dataset.panel + '"]');
@@ -122,6 +122,7 @@ document.querySelectorAll('.boat-media').forEach(m => {
       price.insertBefore(cur, small);
       const cap = (card.textContent.match(/(?:Hasta|Up to)\s+(\d+)/) || [])[1];
       const isBoat = small && /barco|boat/i.test(small.textContent);
+      const shared = small && /personas|people/i.test(small.textContent);
       if (cap && isBoat) {
         const p = document.createElement('p');
         p.className = 'per';
@@ -130,17 +131,90 @@ document.querySelectorAll('.boat-media').forEach(m => {
           : '\u2248 $' + fmt(Math.round(amount / cap)) + ' por pescador con el barco lleno';
         price.after(p);
       }
-      const btn = card.querySelector('.btn');
-      if (btn && waBase) {
-        const hrs = card.querySelector('.card-hrs').textContent.trim();
-        const name = card.querySelector('h3').textContent.trim();
-        const msg = en
-          ? 'Hi, I\u2019d like to book the ' + boat + ' \u2014 ' + name + ' (' + hrs + ')'
-          : 'Hola, quiero reservar el ' + boat + ' \u2014 ' + name + ' (' + hrs + ')';
-        btn.href = waBase.split('?')[0] + '?text=' + encodeURIComponent(msg);
-        btn.target = '_blank';
-        btn.rel = 'noopener';
-      }
+      (TRIPS[panel.dataset.panel] = TRIPS[panel.dataset.panel] || []).push({
+        boat, name: card.querySelector('h3').textContent.trim(),
+        hrs: card.querySelector('.card-hrs').textContent.trim(),
+        amount, cap: shared ? 2 : parseInt(cap || '8', 10), shared,
+        btn: card.querySelector('.btn')
+      });
     });
   });
+})();
+
+// Motor de reservas
+(() => {
+  const en = document.documentElement.lang === 'en';
+  const form = document.getElementById('bkForm');
+  if (!form) return;
+  const $ = id => document.getElementById(id);
+  const boatSel = $('bkBoat'), tripSel = $('bkTrip'), guestSel = $('bkGuests'), dateIn = $('bkDate');
+  const waBase = ((document.querySelector('.wa-float') || {}).href || 'https://wa.me/').split('?')[0];
+  const mailTo = 'reservas@lorisfleet.com';
+  const fmt = n => '$' + n.toLocaleString(en ? 'en-US' : 'es-MX') + ' MXN';
+  const T = en
+    ? { pick: 'Select\u2026', pickDate: 'Choose a date', pickName: 'Please enter your name', hi: 'Hi, I\u2019d like to book a charter with Lori\u2019s Fleet:', boat: 'Boat', trip: 'Trip', date: 'Date', ang: 'Anglers', name: 'Name', notes: 'Notes', total: 'Estimated total', subj: 'Charter booking request', one: 'angler', many: 'anglers', shared: 'Shared tour (2 seats)' }
+    : { pick: 'Selecciona\u2026', pickDate: 'Elige una fecha', pickName: 'Escribe tu nombre', hi: 'Hola, quiero reservar un charter con Lori\u2019s Fleet:', boat: 'Barco', trip: 'Salida', date: 'Fecha', ang: 'Pescadores', name: 'Nombre', notes: 'Notas', total: 'Total estimado', subj: 'Solicitud de reserva de charter', one: 'pescador', many: 'pescadores', shared: 'Tour compartido (2 lugares)' };
+  const boats = Object.keys(TRIPS);
+  boatSel.innerHTML = '<option value="">' + T.pick + '</option>' + boats.map(id => '<option value="' + id + '">' + TRIPS[id][0].boat + '</option>').join('');
+  const tomorrow = new Date(Date.now() + 864e5);
+  dateIn.min = tomorrow.toISOString().slice(0, 10);
+
+  function fillTrips() {
+    const list = TRIPS[boatSel.value] || [];
+    tripSel.innerHTML = '<option value="">' + T.pick + '</option>' + list.map((t, i) => '<option value="' + i + '">' + t.hrs + ' \u00b7 ' + t.name + ' \u2014 ' + fmt(t.amount) + '</option>').join('');
+    tripSel.disabled = !list.length;
+    fillGuests();
+  }
+  function current() { const l = TRIPS[boatSel.value]; return l && l[tripSel.value] ? l[tripSel.value] : null; }
+  function fillGuests() {
+    const t = current(), keep = guestSel.value;
+    const max = t ? t.cap : 0;
+    guestSel.innerHTML = Array.from({ length: max }, (_, i) => '<option value="' + (i + 1) + '">' + (i + 1) + '</option>').join('');
+    guestSel.disabled = !max;
+    if (max) guestSel.value = keep && keep <= max ? keep : String(max);
+    render();
+  }
+  const fmtDate = v => v ? new Date(v + 'T12:00:00').toLocaleDateString(en ? 'en-US' : 'es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  function render() {
+    const t = current();
+    $('bkEmpty').hidden = !!t; $('bkDetail').hidden = !t;
+    if (!t) return;
+    const g = parseInt(guestSel.value || '1', 10);
+    $('bkBoatName').textContent = t.boat;
+    $('bkTripName').textContent = t.hrs + ' \u00b7 ' + t.name;
+    $('bkMeta').textContent = (dateIn.value ? fmtDate(dateIn.value) + ' \u00b7 ' : '') + (t.shared ? T.shared : g + ' ' + (g === 1 ? T.one : T.many));
+    $('bkTotal').textContent = fmt(t.amount);
+    const per = $('bkPer');
+    per.hidden = t.shared;
+    per.textContent = '\u2248 ' + fmt(Math.round(t.amount / g)) + ' ' + (en ? 'per angler' : 'por pescador');
+    updateMail();
+  }
+  function message() {
+    const t = current(); if (!t) return '';
+    const g = guestSel.value;
+    return [T.hi, '', T.boat + ': ' + t.boat, T.trip + ': ' + t.hrs + ' \u00b7 ' + t.name, T.date + ': ' + fmtDate(dateIn.value), T.ang + ': ' + (t.shared ? '2' : g),
+      T.name + ': ' + $('bkName').value.trim(), $('bkNotes').value.trim() ? T.notes + ': ' + $('bkNotes').value.trim() : null, T.total + ': ' + fmt(t.amount)].filter(x => x !== null).join('\n');
+  }
+  function updateMail() { $('bkMail').href = 'mailto:' + mailTo + '?subject=' + encodeURIComponent(T.subj) + '&body=' + encodeURIComponent(message()); }
+  boatSel.addEventListener('change', fillTrips);
+  tripSel.addEventListener('change', fillGuests);
+  [guestSel, dateIn, $('bkName'), $('bkNotes')].forEach(el => el.addEventListener('input', render));
+  const err = $('bkErr');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    let m = '';
+    if (!current()) m = T.pick.replace('\u2026', '') + ': ' + T.boat + ' / ' + T.trip;
+    else if (!dateIn.value || dateIn.value < dateIn.min) m = T.pickDate;
+    else if (!$('bkName').value.trim()) m = T.pickName;
+    err.hidden = !m; err.textContent = m;
+    if (m) return;
+    window.open(waBase + '?text=' + encodeURIComponent(message()), '_blank', 'noopener');
+  });
+  // Los botones RESERVAR de cada tarifa preseleccionan barco y salida
+  boats.forEach(id => TRIPS[id].forEach((t, i) => t.btn.addEventListener('click', () => {
+    boatSel.value = id; fillTrips(); tripSel.value = String(i); fillGuests();
+  })));
+  // Al cambiar de pestaña en tarifas, sugiere ese barco si aún no hay elección
+  document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => { if (!boatSel.value) { boatSel.value = tb.dataset.tab; fillTrips(); } }));
+  fillTrips();
 })();
