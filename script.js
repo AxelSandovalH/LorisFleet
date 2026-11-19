@@ -60,3 +60,32 @@ document.querySelectorAll('.why-list li, .boat, .card, blockquote, .g-item, .ban
 });
 
 document.getElementById('year').textContent = new Date().getFullYear();
+
+// Barra de progreso, enlace activo y botón para volver arriba
+const bar = document.createElement('div');
+bar.className = 'progress';
+document.body.appendChild(bar);
+const toTop = document.createElement('button');
+toTop.className = 'to-top';
+toTop.type = 'button';
+toTop.textContent = '\u2191';
+toTop.setAttribute('aria-label', document.documentElement.lang === 'en' ? 'Back to top' : 'Volver arriba');
+toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+document.body.appendChild(toTop);
+const onScrollUi = () => {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  bar.style.transform = 'scaleX(' + (max > 0 ? scrollY / max : 0) + ')';
+  toTop.classList.toggle('show', scrollY > innerHeight * 0.8);
+};
+onScrollUi();
+addEventListener('scroll', onScrollUi, { passive: true });
+const linkFor = {};
+links.querySelectorAll('a[href^="#"]').forEach(a => { linkFor[a.getAttribute('href').slice(1)] = a; });
+const spy = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) {
+    Object.values(linkFor).forEach(a => a.classList.remove('active'));
+    const a = linkFor[e.target.id];
+    if (a) a.classList.add('active');
+  }
+}), { rootMargin: '-45% 0px -50% 0px' });
+Object.keys(linkFor).forEach(id => { const s = document.getElementById(id); if (s) spy.observe(s); });
