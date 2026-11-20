@@ -25,20 +25,52 @@ function showTab(id) {
 tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
 document.querySelectorAll('[data-boat]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.boat)));
 
-// Galería: lightbox
-const items = [...document.querySelectorAll('#gallery .g-item')];
+// Galería: filtros por barco, "ver más" y visor con pie de foto, contador y deslizamiento
+const gallery = document.getElementById('gallery');
+const gItems = [...gallery.querySelectorAll('.g-item')];
+const chips = [...document.querySelectorAll('.g-chip')];
+const gMore = document.getElementById('gMore');
+const gCount = document.getElementById('gCount');
+const enG = document.documentElement.lang === 'en';
+let gFilter = 'all', gExpanded = false;
+function applyGallery() {
+  gItems.forEach(a => {
+    const match = gFilter === 'all' || a.dataset.boat === gFilter;
+    const hide = !match || (gFilter === 'all' && !gExpanded && a.classList.contains('extra'));
+    a.classList.toggle('g-hide', hide);
+  });
+  gMore.hidden = gFilter !== 'all';
+  gMore.textContent = gExpanded ? gMore.dataset.less : gMore.dataset.more;
+  const n = gItems.filter(a => !a.classList.contains('g-hide')).length;
+  gCount.textContent = n + (enG ? ' photos' : ' fotos');
+}
+chips.forEach(c => c.addEventListener('click', () => {
+  gFilter = c.dataset.f;
+  chips.forEach(x => x.classList.toggle('active', x === c));
+  applyGallery();
+}));
+gMore.addEventListener('click', () => { gExpanded = !gExpanded; applyGallery(); });
+applyGallery();
+
 const lb = document.getElementById('lightbox');
 const lbImg = document.getElementById('lbImg');
-let idx = 0;
+let shown = [], idx = 0;
 function openLb(i) {
-  idx = (i + items.length) % items.length;
-  lbImg.src = items[idx].href;
-  lbImg.alt = items[idx].querySelector('img').alt;
+  shown = gItems.filter(a => !a.classList.contains('g-hide'));
+  idx = (i + shown.length) % shown.length;
+  const a = shown[idx];
+  lbImg.classList.add('swap');
+  lbImg.onload = () => lbImg.classList.remove('swap');
+  lbImg.src = a.href;
+  lbImg.alt = a.querySelector('img').alt;
+  document.getElementById('lbCap').textContent = lbImg.alt;
+  document.getElementById('lbN').textContent = (idx + 1) + ' / ' + shown.length;
   lb.hidden = false;
   document.body.style.overflow = 'hidden';
+  [shown[(idx + 1) % shown.length], shown[(idx - 1 + shown.length) % shown.length]].forEach(n => { new Image().src = n.href; });
 }
 function closeLb() { lb.hidden = true; document.body.style.overflow = ''; }
-items.forEach((a, i) => a.addEventListener('click', e => { e.preventDefault(); openLb(i); }));
+gItems.forEach(a => a.addEventListener('click', e => { e.preventDefault(); shown = gItems.filter(x => !x.classList.contains('g-hide')); openLb(shown.indexOf(a)); }));
 document.getElementById('lbClose').addEventListener('click', closeLb);
 document.getElementById('lbPrev').addEventListener('click', () => openLb(idx - 1));
 document.getElementById('lbNext').addEventListener('click', () => openLb(idx + 1));
@@ -48,6 +80,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeLb();
   if (e.key === 'ArrowLeft') openLb(idx - 1);
   if (e.key === 'ArrowRight') openLb(idx + 1);
+});
+let tx = null;
+lb.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+lb.addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx; tx = null;
+  if (Math.abs(dx) > 50) openLb(idx + (dx < 0 ? 1 : -1));
 });
 
 // Aparición suave de secciones
