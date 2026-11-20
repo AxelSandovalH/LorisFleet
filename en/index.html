@@ -323,35 +323,11 @@
 <section class="section dark" id="reservar">
   <div class="wrap">
     <p class="eyebrow light">NO PAYMENT UP FRONT</p>
-    <h2 class="h2 light">BOOK YOUR TRIP</h2>
-    <p class="lead light">Pick a boat, trip and date. We show the total instantly and confirm your booking on WhatsApp.</p>
-    <div class="book">
-      <form class="book-form" id="bkForm" novalidate>
-        <label>Boat<select id="bkBoat" required></select></label>
-        <label>Trip<select id="bkTrip" required></select></label>
-        <div class="book-row">
-          <label>Date<input type="date" id="bkDate" required></label>
-          <label>Anglers<select id="bkGuests" required></select></label>
-        </div>
-        <label>Your name<input type="text" id="bkName" autocomplete="name" placeholder="Full name" required></label>
-        <label>Notes (optional)<textarea id="bkNotes" rows="3" placeholder="Species you want, kids on board, hotel…"></textarea></label>
-        <p class="book-err" id="bkErr" role="alert" hidden></p>
-      </form>
-      <aside class="book-sum" aria-live="polite">
-        <p class="eyebrow">SUMMARY</p>
-        <p class="book-empty" id="bkEmpty">Choose a trip to see the total.</p>
-        <div id="bkDetail" hidden>
-          <p class="book-name" id="bkBoatName"></p>
-          <p class="book-trip" id="bkTripName"></p>
-          <p class="book-meta" id="bkMeta"></p>
-          <p class="book-total-label">Estimated total</p>
-          <p class="book-total" id="bkTotal"></p>
-          <p class="per" id="bkPer"></p>
-        </div>
-        <button type="submit" form="bkForm" class="btn btn-wa btn-block" id="bkSend">SEND REQUEST ON WHATSAPP</button>
-        <a class="book-mail" id="bkMail" href="mailto:reservas@lorisfleet.com">or send by email</a>
-        <p class="book-fine">Nothing is charged now. Availability, payment and licenses are confirmed on WhatsApp.</p>
-      </aside>
+    <h2 class="h2 light">BOOK IN UNDER A MINUTE</h2>
+    <p class="lead light">Pick a date, boat and trip. We show the total and confirm on WhatsApp.</p>
+    <div class="book-cta">
+      <a href="#reservar" class="btn btn-light" data-book>START BOOKING</a>
+      <a class="btn btn-ghost" href="https://wa.me/521XXXXXXXXXX?text=Hi%2C%20I%27d%20like%20to%20book%20a%20charter%20with%20Lori%27s%20Fleet" target="_blank" rel="noopener">Chat on WhatsApp</a>
     </div>
   </div>
 </section>
@@ -362,19 +338,34 @@
     <p class="eyebrow light">REVIEWS</p>
     <h2 class="h2 light">OUR CUSTOMERS LOVE TO BRAG</h2>
     <p class="lead light">4.8 out of 5 on FishingBooker with 93 reviews. Don't take our word for it.</p>
-    <div class="reviews">
-      <blockquote>
-        <p>"We had an amazing 4-hour trip with Lori 3. Captain Ramón and first mate Jorge were excellent. Thanks to them we landed a blue marlin, a sailfish and a bonito. We also saw whales, lots of dolphins and a sea turtle."</p>
-        <footer>S. MILLER · LORI III, DECEMBER 2025</footer>
-      </blockquote>
-      <blockquote>
-        <p>"Joel was an amazing captain and put us on the fish right away. The boat was clean and safe. Today we did the bay tour, but next year we definitely want to do a longer one."</p>
-        <footer>THERESA M. · FIVE REASONS, MINNESOTA</footer>
-      </blockquote>
-      <blockquote>
-        <p>"The captain took the time to explain the options between inshore and open-water fishing, and they kept adjusting the lines throughout the trip based on what we were after."</p>
-        <footer>VERIFIED ANGLER · FISHINGBOOKER</footer>
-      </blockquote>
+    <div class="rv">
+      <aside class="rv-score">
+        <p class="rv-big">4.8</p>
+        <div class="rv-stars" aria-hidden="true">★★★★★</div>
+        <p class="rv-count">93 reviews on FishingBooker</p>
+        <ul class="rv-facts">
+          <li><strong>98%</strong><span>report a great experience</span></li>
+          <li><strong>5.0</strong><span>Lori II and Five Reasons</span></li>
+        </ul>
+        <a class="btn btn-light btn-block" href="https://fishingbooker.com/profile/view/292811" target="_blank" rel="noopener">Read all reviews →</a>
+      </aside>
+      <div class="rv-list">
+        <blockquote class="featured">
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"We had an amazing 4-hour trip with Lori 3. Captain Ramón and first mate Jorge were excellent. Thanks to them we landed a blue marlin, a sailfish and a bonito. We also saw whales, lots of dolphins and a sea turtle."</p>
+          <footer><span class="rv-av">SM</span><span class="rv-who"><b>S. Miller</b><small>Lori III · December 2025</small></span></footer>
+        </blockquote>
+        <blockquote>
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"Joel was an amazing captain and put us on the fish right away. The boat was clean and safe. Today we did the bay tour, but next year we definitely want to do a longer one."</p>
+          <footer><span class="rv-av">TM</span><span class="rv-who"><b>Theresa M.</b><small>Five Reasons · Minnesota</small></span></footer>
+        </blockquote>
+        <blockquote>
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"The captain took the time to explain the options between inshore and open-water fishing, and they kept adjusting the lines throughout the trip based on what we were after."</p>
+          <footer><span class="rv-av">✓</span><span class="rv-who"><b>Verified angler</b><small>FishingBooker</small></span></footer>
+        </blockquote>
+      </div>
     </div>
   </div>
 </section>

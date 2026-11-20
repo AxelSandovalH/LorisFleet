@@ -134,87 +134,171 @@ const TRIPS = {};
       (TRIPS[panel.dataset.panel] = TRIPS[panel.dataset.panel] || []).push({
         boat, name: card.querySelector('h3').textContent.trim(),
         hrs: card.querySelector('.card-hrs').textContent.trim(),
-        amount, cap: shared ? 2 : parseInt(cap || '8', 10), shared,
+        amount, cap: shared ? 2 : parseInt(cap || '8', 10), shared, featured: card.classList.contains('featured'),
         btn: card.querySelector('.btn')
       });
     });
   });
 })();
 
-// Motor de reservas
+// Motor de reservas: asistente en modal de 3 pasos (fecha, salida, contacto)
 (() => {
   const en = document.documentElement.lang === 'en';
-  const form = document.getElementById('bkForm');
-  if (!form) return;
-  const $ = id => document.getElementById(id);
-  const boatSel = $('bkBoat'), tripSel = $('bkTrip'), guestSel = $('bkGuests'), dateIn = $('bkDate');
+  const loc = en ? 'en-US' : 'es-MX';
+  // Si algún día hay backend, pon aquí la URL: recibirá un POST con la solicitud en JSON.
+  const BOOKING_ENDPOINT = '';
   const waBase = ((document.querySelector('.wa-float') || {}).href || 'https://wa.me/').split('?')[0];
   const mailTo = 'reservas@lorisfleet.com';
-  const fmt = n => '$' + n.toLocaleString(en ? 'en-US' : 'es-MX') + ' MXN';
-  const T = en
-    ? { pick: 'Select\u2026', pickDate: 'Choose a date', pickName: 'Please enter your name', hi: 'Hi, I\u2019d like to book a charter with Lori\u2019s Fleet:', boat: 'Boat', trip: 'Trip', date: 'Date', ang: 'Anglers', name: 'Name', notes: 'Notes', total: 'Estimated total', subj: 'Charter booking request', one: 'angler', many: 'anglers', shared: 'Shared tour (2 seats)' }
-    : { pick: 'Selecciona\u2026', pickDate: 'Elige una fecha', pickName: 'Escribe tu nombre', hi: 'Hola, quiero reservar un charter con Lori\u2019s Fleet:', boat: 'Barco', trip: 'Salida', date: 'Fecha', ang: 'Pescadores', name: 'Nombre', notes: 'Notas', total: 'Total estimado', subj: 'Solicitud de reserva de charter', one: 'pescador', many: 'pescadores', shared: 'Tour compartido (2 lugares)' };
+  const L = en ? {
+    eyebrow: "LORI'S FLEET CHARTER", title: 'BOOK YOUR TRIP', close: 'Close', back: '← Back', cont: 'CONTINUE',
+    pickDate: 'SELECT A DATE', contDate: d => 'CONTINUE — ' + d, boat: 'Boat', trip: 'Trip type', anglers: 'Number of anglers',
+    max: n => 'Max ' + n + ' anglers on this boat', sharedNote: 'Shared tour: price covers 2 seats', notes: 'Special requests / notes',
+    notesPh: 'Target species, experience level, anything we should know…', name: 'Full name', phone: 'WhatsApp', email: 'Email',
+    namePh: 'John Smith', phonePh: '+1 555 000 0000', emailPh: 'you@email.com', date: 'Date', ang: 'Anglers', total: 'Total',
+    confirm: 'CONFIRM BOOKING', upTo: n => 'Up to ' + n + ' anglers', hi: "Hi, I'd like to book a charter with Lori's Fleet:",
+    k: { boat: 'Boat', trip: 'Trip', date: 'Date', ang: 'Anglers', name: 'Name', phone: 'WhatsApp', email: 'Email', notes: 'Notes', total: 'Estimated total' },
+    doneT: 'REQUEST READY!', doneP: 'One last step: send it on WhatsApp so the captain can confirm availability. Nothing is charged now.',
+    sendWa: 'SEND ON WHATSAPP', sendMail: 'Send by email instead', closeBtn: 'Close', subj: 'Charter booking request', seats: '2 seats', pp: 'per angler'
+  } : {
+    eyebrow: "CHARTER LORI'S FLEET", title: 'RESERVA TU SALIDA', close: 'Cerrar', back: '← Atrás', cont: 'CONTINUAR',
+    pickDate: 'ELIGE UNA FECHA', contDate: d => 'CONTINUAR — ' + d, boat: 'Embarcación', trip: 'Tipo de salida', anglers: 'Número de pescadores',
+    max: n => 'Máximo ' + n + ' pescadores en este barco', sharedNote: 'Tour compartido: el precio cubre 2 lugares', notes: 'Peticiones especiales / notas',
+    notesPh: 'Especie que buscas, nivel de experiencia, algo que debamos saber…', name: 'Nombre completo', phone: 'WhatsApp', email: 'Correo',
+    namePh: 'Juan Pérez', phonePh: '+52 314 000 0000', emailPh: 'tu@correo.com', date: 'Fecha', ang: 'Pescadores', total: 'Total',
+    confirm: 'CONFIRMAR RESERVA', upTo: n => 'Hasta ' + n + ' pescadores', hi: 'Hola, quiero reservar un charter con Lori’s Fleet:',
+    k: { boat: 'Barco', trip: 'Salida', date: 'Fecha', ang: 'Pescadores', name: 'Nombre', phone: 'WhatsApp', email: 'Correo', notes: 'Notas', total: 'Total estimado' },
+    doneT: '¡SOLICITUD LISTA!', doneP: 'Un último paso: envíala por WhatsApp para que el capitán confirme disponibilidad. No se cobra nada ahora.',
+    sendWa: 'ENVIAR POR WHATSAPP', sendMail: 'Enviar por correo', closeBtn: 'Cerrar', subj: 'Solicitud de reserva de charter', seats: '2 lugares', pp: 'por pescador'
+  };
+  const fmt = n => '$' + n.toLocaleString(loc) + ' MXN';
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const nice = (v, long) => new Date(v + 'T12:00:00').toLocaleDateString(loc, long ? { weekday: 'short', month: 'short', day: 'numeric' } : { day: 'numeric', month: 'short' });
   const boats = Object.keys(TRIPS);
-  boatSel.innerHTML = '<option value="">' + T.pick + '</option>' + boats.map(id => '<option value="' + id + '">' + TRIPS[id][0].boat + '</option>').join('');
-  const tomorrow = new Date(Date.now() + 864e5);
-  dateIn.min = tomorrow.toISOString().slice(0, 10);
+  if (!boats.length) return;
+  const boatCap = id => Math.max(...TRIPS[id].filter(t => !t.shared).map(t => t.cap));
+  const featuredIdx = id => Math.max(0, TRIPS[id].findIndex(t => t.featured));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const minDate = new Date(today.getTime() + 864e5);
+  const maxDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('lf-contact') || '{}'); } catch (e) {}
 
-  function fillTrips() {
-    const list = TRIPS[boatSel.value] || [];
-    tripSel.innerHTML = '<option value="">' + T.pick + '</option>' + list.map((t, i) => '<option value="' + i + '">' + t.hrs + ' \u00b7 ' + t.name + ' \u2014 ' + fmt(t.amount) + '</option>').join('');
-    tripSel.disabled = !list.length;
-    fillGuests();
+  const S = { step: 1, month: new Date(minDate.getFullYear(), minDate.getMonth(), 1), date: '', boat: boats[0], trip: featuredIdx(boats[0]), guests: 2, notes: '', name: saved.name || '', phone: saved.phone || '', email: saved.email || '' };
+  let pre = null, opener = null;
+
+  const ov = document.createElement('div');
+  ov.className = 'bk-ov'; ov.hidden = true;
+  ov.innerHTML = '<div class="bk" role="dialog" aria-modal="true" aria-labelledby="bkT"><div class="bk-head"><button type="button" class="bk-x" aria-label="' + L.close + '">×</button><p class="bk-eyebrow">' + L.eyebrow + '</p><h2 class="bk-title" id="bkT">' + L.title + '</h2><ol class="bk-steps" aria-hidden="true"><li></li><li></li><li></li></ol></div><div class="bk-body"></div></div>';
+  document.body.appendChild(ov);
+  const body = ov.querySelector('.bk-body');
+  const stepEls = ov.querySelectorAll('.bk-steps li');
+
+  const cur = () => TRIPS[S.boat][S.trip];
+  const total = () => cur().amount;
+  function summary() {
+    const t = cur();
+    return '<div class="bk-sum"><div><span>' + L.date + '</span><b>' + nice(S.date, true) + '</b></div><div><span>' + L.boat + '</span><b>' + t.boat + '</b></div><div><span>' + L.trip + '</span><b>' + t.name + ' — ' + fmt(t.amount) + '</b></div><div><span>' + L.ang + '</span><b>' + (t.shared ? L.seats : S.guests) + '</b></div></div>';
   }
-  function current() { const l = TRIPS[boatSel.value]; return l && l[tripSel.value] ? l[tripSel.value] : null; }
-  function fillGuests() {
-    const t = current(), keep = guestSel.value;
-    const max = t ? t.cap : 0;
-    guestSel.innerHTML = Array.from({ length: max }, (_, i) => '<option value="' + (i + 1) + '">' + (i + 1) + '</option>').join('');
-    guestSel.disabled = !max;
-    if (max) guestSel.value = keep && keep <= max ? keep : String(max);
-    render();
+  function setSteps() {
+    stepEls.forEach((li, i) => { li.className = S.step > i + 1 || S.step === 4 ? 'done' : S.step === i + 1 ? 'on' : ''; li.textContent = S.step > i + 1 || S.step === 4 ? '✓' : i + 1; });
   }
-  const fmtDate = v => v ? new Date(v + 'T12:00:00').toLocaleDateString(en ? 'en-US' : 'es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
   function render() {
-    const t = current();
-    $('bkEmpty').hidden = !!t; $('bkDetail').hidden = !t;
-    if (!t) return;
-    const g = parseInt(guestSel.value || '1', 10);
-    $('bkBoatName').textContent = t.boat;
-    $('bkTripName').textContent = t.hrs + ' \u00b7 ' + t.name;
-    $('bkMeta').textContent = (dateIn.value ? fmtDate(dateIn.value) + ' \u00b7 ' : '') + (t.shared ? T.shared : g + ' ' + (g === 1 ? T.one : T.many));
-    $('bkTotal').textContent = fmt(t.amount);
-    const per = $('bkPer');
-    per.hidden = t.shared;
-    per.textContent = '\u2248 ' + fmt(Math.round(t.amount / g)) + ' ' + (en ? 'per angler' : 'por pescador');
-    updateMail();
+    setSteps();
+    if (S.step === 1) renderDate(); else if (S.step === 2) renderTrip(); else if (S.step === 3) renderContact(); else renderDone();
   }
+
+  function renderDate() {
+    const y = S.month.getFullYear(), m = S.month.getMonth();
+    const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    const wd = Array.from({ length: 7 }, (_, i) => { const n = new Date(2023, 0, 1 + i).toLocaleDateString(loc, { weekday: 'short' }).replace('.', ''); return n.charAt(0).toUpperCase() + n.slice(1, 2); });
+    let cells = '';
+    for (let i = 0; i < first; i++) cells += '<span></span>';
+    for (let d = 1; d <= days; d++) {
+      const dt = new Date(y, m, d), v = ymd(dt), off = dt < minDate || dt > maxDate;
+      cells += '<button type="button" class="bk-day' + (v === S.date ? ' sel' : '') + '" data-d="' + v + '"' + (off ? ' disabled' : '') + '>' + d + '</button>';
+    }
+    const label = S.month.toLocaleDateString(loc, { month: 'long', year: 'numeric' });
+    body.innerHTML = '<div class="bk-cal"><div class="bk-month"><button type="button" class="bk-nav" data-nav="-1" aria-label="‹"' + (y === minDate.getFullYear() && m === minDate.getMonth() ? ' disabled' : '') + '>‹</button><strong>' + label.charAt(0).toUpperCase() + label.slice(1) + '</strong><button type="button" class="bk-nav" data-nav="1" aria-label="›"' + (new Date(y, m + 1, 1) > maxDate ? ' disabled' : '') + '>›</button></div><div class="bk-wd">' + wd.map(w => '<span>' + w + '</span>').join('') + '</div><div class="bk-days">' + cells + '</div></div><button type="button" class="bk-go" id="bkGo"' + (S.date ? '' : ' disabled') + '>' + (S.date ? L.contDate(nice(S.date).toUpperCase()) : L.pickDate) + '</button>';
+    body.querySelectorAll('.bk-nav').forEach(b => b.onclick = () => { S.month = new Date(y, m + parseInt(b.dataset.nav, 10), 1); renderDate(); });
+    body.querySelectorAll('.bk-day').forEach(b => b.onclick = () => { S.date = b.dataset.d; renderDate(); const g = body.querySelector('#bkGo'); if (g) g.focus({ preventScroll: true }); });
+    body.querySelector('#bkGo').onclick = () => { S.step = 2; render(); };
+  }
+
+  function renderTrip() {
+    const list = TRIPS[S.boat], t = list[S.trip];
+    const boatOpts = boats.map(id => '<button type="button" class="bk-opt' + (id === S.boat ? ' sel' : '') + '" data-boat="' + id + '"><b>' + TRIPS[id][0].boat + '</b><small>' + L.upTo(boatCap(id)) + '</small></button>').join('');
+    const tripOpts = list.map((x, i) => '<button type="button" class="bk-opt' + (i === S.trip ? ' sel' : '') + '" data-trip="' + i + '"><b>' + x.name + '</b><small>' + x.hrs.toLowerCase() + ' · ' + fmt(x.amount) + '</small></button>').join('');
+    let ang;
+    if (t.shared) ang = '<p class="bk-hint">' + L.sharedNote + '</p>';
+    else ang = '<div class="bk-n">' + Array.from({ length: t.cap }, (_, i) => '<button type="button" class="bk-opt' + (i + 1 === S.guests ? ' sel' : '') + '" data-g="' + (i + 1) + '">' + (i + 1) + '</button>').join('') + '</div><p class="bk-hint">' + L.max(t.cap) + '</p>';
+    body.innerHTML = '<p class="bk-l">' + L.boat + '</p><div class="bk-opts c3">' + boatOpts + '</div><p class="bk-l">' + L.trip + '</p><div class="bk-opts">' + tripOpts + '</div><p class="bk-l">' + L.anglers + '</p>' + ang + '<p class="bk-l">' + L.notes + '</p><textarea class="bk-in" id="bkNotes" rows="2" placeholder="' + L.notesPh + '"></textarea><div class="bk-foot"><button type="button" class="bk-back">' + L.back + '</button><button type="button" class="bk-go" id="bkGo">' + L.cont + ' →</button></div>';
+    body.querySelector('#bkNotes').value = S.notes;
+    body.querySelector('#bkNotes').oninput = e => { S.notes = e.target.value; };
+    body.querySelectorAll('[data-boat]').forEach(b => b.onclick = () => { S.boat = b.dataset.boat; S.trip = featuredIdx(S.boat); S.guests = Math.min(S.guests, TRIPS[S.boat][S.trip].cap); renderTrip(); });
+    body.querySelectorAll('[data-trip]').forEach(b => b.onclick = () => { S.trip = parseInt(b.dataset.trip, 10); S.guests = Math.min(S.guests, cur().cap); renderTrip(); });
+    body.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { S.guests = parseInt(b.dataset.g, 10); renderTrip(); });
+    body.querySelector('.bk-back').onclick = () => { S.step = 1; render(); };
+    body.querySelector('#bkGo').onclick = () => { S.step = 3; render(); };
+  }
+
+  const validPhone = v => v.replace(/\D/g, '').length >= 8;
+  const validName = v => v.trim().length >= 2;
+  function renderContact() {
+    body.innerHTML = '<label class="bk-l" for="bkName">' + L.name + ' *</label><input class="bk-in" id="bkName" type="text" autocomplete="name" placeholder="' + L.namePh + '"><label class="bk-l" for="bkPhone">' + L.phone + ' *</label><input class="bk-in" id="bkPhone" type="tel" autocomplete="tel" placeholder="' + L.phonePh + '"><label class="bk-l" for="bkEmail">' + L.email + '</label><input class="bk-in" id="bkEmail" type="email" autocomplete="email" placeholder="' + L.emailPh + '">' + summary() + '<div class="bk-total"><span>' + L.total + '</span><b>' + fmt(total()) + '</b></div><div class="bk-foot"><button type="button" class="bk-back">' + L.back + '</button><button type="button" class="bk-go" id="bkGo" disabled>' + L.confirm + '</button></div>';
+    const n = body.querySelector('#bkName'), p = body.querySelector('#bkPhone'), e = body.querySelector('#bkEmail'), go = body.querySelector('#bkGo');
+    n.value = S.name; p.value = S.phone; e.value = S.email;
+    const check = () => { S.name = n.value; S.phone = p.value; S.email = e.value; go.disabled = !(validName(S.name) && validPhone(S.phone)); };
+    [n, p, e].forEach(x => x.oninput = check); check();
+    body.querySelector('.bk-back').onclick = () => { S.step = 2; render(); };
+    go.onclick = () => submit();
+  }
+
   function message() {
-    const t = current(); if (!t) return '';
-    const g = guestSel.value;
-    return [T.hi, '', T.boat + ': ' + t.boat, T.trip + ': ' + t.hrs + ' \u00b7 ' + t.name, T.date + ': ' + fmtDate(dateIn.value), T.ang + ': ' + (t.shared ? '2' : g),
-      T.name + ': ' + $('bkName').value.trim(), $('bkNotes').value.trim() ? T.notes + ': ' + $('bkNotes').value.trim() : null, T.total + ': ' + fmt(t.amount)].filter(x => x !== null).join('\n');
+    const t = cur(), K = L.k;
+    return [L.hi, '', K.boat + ': ' + t.boat, K.trip + ': ' + t.hrs + ' · ' + t.name, K.date + ': ' + nice(S.date, true), K.ang + ': ' + (t.shared ? 2 : S.guests), K.name + ': ' + S.name.trim(), K.phone + ': ' + S.phone.trim(), S.email.trim() ? K.email + ': ' + S.email.trim() : null, S.notes.trim() ? K.notes + ': ' + S.notes.trim() : null, K.total + ': ' + fmt(t.amount)].filter(x => x !== null).join('\n');
   }
-  function updateMail() { $('bkMail').href = 'mailto:' + mailTo + '?subject=' + encodeURIComponent(T.subj) + '&body=' + encodeURIComponent(message()); }
-  boatSel.addEventListener('change', fillTrips);
-  tripSel.addEventListener('change', fillGuests);
-  [guestSel, dateIn, $('bkName'), $('bkNotes')].forEach(el => el.addEventListener('input', render));
-  const err = $('bkErr');
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    let m = '';
-    if (!current()) m = T.pick.replace('\u2026', '') + ': ' + T.boat + ' / ' + T.trip;
-    else if (!dateIn.value || dateIn.value < dateIn.min) m = T.pickDate;
-    else if (!$('bkName').value.trim()) m = T.pickName;
-    err.hidden = !m; err.textContent = m;
-    if (m) return;
+  function submit() {
+    try { localStorage.setItem('lf-contact', JSON.stringify({ name: S.name.trim(), phone: S.phone.trim(), email: S.email.trim() })); } catch (e) {}
+    const t = cur();
+    if (BOOKING_ENDPOINT) {
+      fetch(BOOKING_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: en ? 'en' : 'es', boat: t.boat, trip: t.name, hours: t.hrs, date: S.date, anglers: t.shared ? 2 : S.guests, total: t.amount, name: S.name.trim(), phone: S.phone.trim(), email: S.email.trim(), notes: S.notes.trim() }) }).catch(() => {});
+    }
+    S.step = 4; render();
     window.open(waBase + '?text=' + encodeURIComponent(message()), '_blank', 'noopener');
+  }
+  function renderDone() {
+    body.innerHTML = '<div class="bk-done"><div class="bk-ok">✓</div><h3>' + L.doneT + '</h3><p>' + L.doneP + '</p></div>' + summary() + '<a class="bk-go wa" id="bkWa" target="_blank" rel="noopener">' + L.sendWa + '</a><a class="bk-alt" id="bkMail">' + L.sendMail + '</a><button type="button" class="bk-back wide">' + L.closeBtn + '</button>';
+    body.querySelector('#bkWa').href = waBase + '?text=' + encodeURIComponent(message());
+    body.querySelector('#bkMail').href = 'mailto:' + mailTo + '?subject=' + encodeURIComponent(L.subj) + '&body=' + encodeURIComponent(message());
+    body.querySelector('.bk-back').onclick = close;
+  }
+
+  function open() {
+    opener = document.activeElement;
+    if (pre) { S.boat = pre.boat; S.trip = pre.trip; S.guests = Math.min(S.guests, TRIPS[S.boat][S.trip].cap); pre = null; }
+    if (S.step === 4) { S.step = 1; S.date = ''; }
+    ov.hidden = false;
+    document.body.style.overflow = 'hidden';
+    render();
+    ov.querySelector('.bk').scrollTop = 0;
+    requestAnimationFrame(() => ov.classList.add('open'));
+    const f = body.querySelector('button:not([disabled])'); if (f) f.focus({ preventScroll: true });
+  }
+  function close() {
+    ov.classList.remove('open');
+    setTimeout(() => { ov.hidden = true; }, 220);
+    document.body.style.overflow = '';
+    if (opener && opener.focus) opener.focus({ preventScroll: true });
+  }
+  ov.querySelector('.bk-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  document.addEventListener('keydown', e => { if (!ov.hidden && e.key === 'Escape') close(); });
+
+  boats.forEach(id => TRIPS[id].forEach((t, i) => t.btn.addEventListener('click', () => { pre = { boat: id, trip: i }; })));
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href="#reservar"],[data-book]');
+    if (a) { e.preventDefault(); open(); }
   });
-  // Los botones RESERVAR de cada tarifa preseleccionan barco y salida
-  boats.forEach(id => TRIPS[id].forEach((t, i) => t.btn.addEventListener('click', () => {
-    boatSel.value = id; fillTrips(); tripSel.value = String(i); fillGuests();
-  })));
-  // Al cambiar de pestaña en tarifas, sugiere ese barco si aún no hay elección
-  document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => { if (!boatSel.value) { boatSel.value = tb.dataset.tab; fillTrips(); } }));
-  fillTrips();
+  if (location.hash === '#reservar') open();
 })();

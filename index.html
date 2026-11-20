@@ -323,35 +323,11 @@
 <section class="section dark" id="reservar">
   <div class="wrap">
     <p class="eyebrow light">SIN PAGO ADELANTADO</p>
-    <h2 class="h2 light">RESERVA TU SALIDA</h2>
-    <p class="lead light">Elige barco, salida y fecha. Te mostramos el total al instante y confirmamos tu reserva por WhatsApp.</p>
-    <div class="book">
-      <form class="book-form" id="bkForm" novalidate>
-        <label>Embarcación<select id="bkBoat" required></select></label>
-        <label>Salida<select id="bkTrip" required></select></label>
-        <div class="book-row">
-          <label>Fecha<input type="date" id="bkDate" required></label>
-          <label>Pescadores<select id="bkGuests" required></select></label>
-        </div>
-        <label>Tu nombre<input type="text" id="bkName" autocomplete="name" placeholder="Nombre completo" required></label>
-        <label>Notas (opcional)<textarea id="bkNotes" rows="3" placeholder="Especie que buscas, niños a bordo, hotel…"></textarea></label>
-        <p class="book-err" id="bkErr" role="alert" hidden></p>
-      </form>
-      <aside class="book-sum" aria-live="polite">
-        <p class="eyebrow">RESUMEN</p>
-        <p class="book-empty" id="bkEmpty">Elige una salida para ver el total.</p>
-        <div id="bkDetail" hidden>
-          <p class="book-name" id="bkBoatName"></p>
-          <p class="book-trip" id="bkTripName"></p>
-          <p class="book-meta" id="bkMeta"></p>
-          <p class="book-total-label">Total estimado</p>
-          <p class="book-total" id="bkTotal"></p>
-          <p class="per" id="bkPer"></p>
-        </div>
-        <button type="submit" form="bkForm" class="btn btn-wa btn-block" id="bkSend">ENVIAR SOLICITUD POR WHATSAPP</button>
-        <a class="book-mail" id="bkMail" href="mailto:reservas@lorisfleet.com">o enviar por correo</a>
-        <p class="book-fine">No se cobra nada ahora. Disponibilidad, pago y licencias se confirman por WhatsApp.</p>
-      </aside>
+    <h2 class="h2 light">RESERVA EN MENOS DE UN MINUTO</h2>
+    <p class="lead light">Elige fecha, barco y salida. Te mostramos el total y confirmamos por WhatsApp.</p>
+    <div class="book-cta">
+      <a href="#reservar" class="btn btn-light" data-book>EMPEZAR RESERVA</a>
+      <a class="btn btn-ghost" href="https://wa.me/521XXXXXXXXXX?text=Hola%2C%20quiero%20reservar%20un%20charter%20con%20Lori%27s%20Fleet" target="_blank" rel="noopener">Chatear por WhatsApp</a>
     </div>
   </div>
 </section>
@@ -362,19 +338,34 @@
     <p class="eyebrow light">RESEÑAS</p>
     <h2 class="h2 light">A NUESTROS CLIENTES LES GUSTA PRESUMIR</h2>
     <p class="lead light">4.8 de 5 en FishingBooker con 93 reseñas. No lo decimos nosotros.</p>
-    <div class="reviews">
-      <blockquote>
-        <p>"Tuvimos una increíble excursión de 4 horas con Lori 3. El capitán Ramón y el primer oficial Jorge fueron excelentes. Gracias a ellos pudimos cobrar un marlín azul, un pez vela y un bonito. También vimos ballenas, muchos delfines y una tortuga marina."</p>
-        <footer>S. MILLER · LORI III, DICIEMBRE 2025</footer>
-      </blockquote>
-      <blockquote>
-        <p>"Joel fue un capitán increíble y nos puso en los peces de inmediato. El barco estaba limpio y seguro. Hoy hicimos el recorrido por la bahía, pero el año que viene definitivamente queremos hacer uno más largo."</p>
-        <footer>THERESA M. · FIVE REASONS, MINNESOTA</footer>
-      </blockquote>
-      <blockquote>
-        <p>"El capitán se tomó el tiempo para explicarnos las opciones entre pesca costera o en aguas abiertas, y fueron ajustando las líneas a lo largo del viaje según lo que íbamos buscando."</p>
-        <footer>PESCADOR VERIFICADO · FISHINGBOOKER</footer>
-      </blockquote>
+    <div class="rv">
+      <aside class="rv-score">
+        <p class="rv-big">4.8</p>
+        <div class="rv-stars" aria-hidden="true">★★★★★</div>
+        <p class="rv-count">93 reseñas en FishingBooker</p>
+        <ul class="rv-facts">
+          <li><strong>98%</strong><span>reporta una buena experiencia</span></li>
+          <li><strong>5.0</strong><span>Lori II y Five Reasons</span></li>
+        </ul>
+        <a class="btn btn-light btn-block" href="https://fishingbooker.com/es/profile/view/292811" target="_blank" rel="noopener">Ver todas las reseñas →</a>
+      </aside>
+      <div class="rv-list">
+        <blockquote class="featured">
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"Tuvimos una increíble excursión de 4 horas con Lori 3. El capitán Ramón y el primer oficial Jorge fueron excelentes. Gracias a ellos pudimos cobrar un marlín azul, un pez vela y un bonito. También vimos ballenas, muchos delfines y una tortuga marina."</p>
+          <footer><span class="rv-av">SM</span><span class="rv-who"><b>S. Miller</b><small>Lori III · Diciembre 2025</small></span></footer>
+        </blockquote>
+        <blockquote>
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"Joel fue un capitán increíble y nos puso en los peces de inmediato. El barco estaba limpio y seguro. Hoy hicimos el recorrido por la bahía, pero el año que viene definitivamente queremos hacer uno más largo."</p>
+          <footer><span class="rv-av">TM</span><span class="rv-who"><b>Theresa M.</b><small>Five Reasons · Minnesota</small></span></footer>
+        </blockquote>
+        <blockquote>
+          <div class="rv-stars" aria-label="5/5">★★★★★</div>
+          <p>"El capitán se tomó el tiempo para explicarnos las opciones entre pesca costera o en aguas abiertas, y fueron ajustando las líneas a lo largo del viaje según lo que íbamos buscando."</p>
+          <footer><span class="rv-av">✓</span><span class="rv-who"><b>Pescador verificado</b><small>FishingBooker</small></span></footer>
+        </blockquote>
+      </div>
     </div>
   </div>
 </section>
