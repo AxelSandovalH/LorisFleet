@@ -341,3 +341,56 @@ const TRIPS = {};
   });
   if (location.hash === '#reservar') open();
 })();
+
+// Pre-chat de WhatsApp: saludo, respuestas rápidas y mensaje listo antes de abrir wa.me
+(() => {
+  const en = document.documentElement.lang === 'en';
+  const float = document.querySelector('.wa-float');
+  if (!float) return;
+  const wa = 'https://wa.me/523141639998';
+  const T = en ? {
+    name: "Lori's Fleet", status: 'Usually replies in minutes', hi: 'Hi! \u{1F44B} Thanks for stopping by. What can we help you with?',
+    q: ['I want to book a charter', 'Rates and trip lengths', 'Fishing with family or kids', 'Another question'],
+    book: 'Book with date and price', msgs: ["Hi, I'd like to book a charter with Lori's Fleet.", "Hi, could you tell me the rates and trip lengths?", "Hi, we're planning to fish with family and kids. What do you recommend?", 'Hi, I have a question about your charters.'],
+    your: 'Your name (optional)', msgLabel: 'Your message', go: 'CONTINUE ON WHATSAPP', note: "You'll chat directly with the captain's team on WhatsApp.", close: 'Close', open: 'WhatsApp chat', sig: 'My name is '
+  } : {
+    name: "Lori's Fleet", status: 'Normalmente responde en minutos', hi: '¡Hola! \u{1F44B} Gracias por escribirnos. ¿En qué podemos ayudarte?',
+    q: ['Quiero reservar un charter', 'Precios y duración de salidas', 'Pescar con familia o niños', 'Otra pregunta'],
+    book: 'Reservar con fecha y precio', msgs: ['Hola, quiero reservar un charter con Lori’s Fleet.', 'Hola, ¿me pueden compartir los precios y la duración de las salidas?', 'Hola, vamos a pescar en familia con niños. ¿Qué nos recomiendan?', 'Hola, tengo una pregunta sobre sus charters.'],
+    your: 'Tu nombre (opcional)', msgLabel: 'Tu mensaje', go: 'CONTINUAR EN WHATSAPP', note: 'Hablarás directo con el equipo del capitán por WhatsApp.', close: 'Cerrar', open: 'Chat de WhatsApp', sig: 'Me llamo '
+  };
+  const box = document.createElement('div');
+  box.className = 'pc'; box.hidden = true;
+  box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', T.open);
+  box.innerHTML = '<div class="pc-head"><img src="' + (document.querySelector('.brand img') || {}).src + '" alt=""><div><b>' + T.name + '</b><small><i></i>' + T.status + '</small></div><button type="button" class="pc-x" aria-label="' + T.close + '">×</button></div>' +
+    '<div class="pc-body"><p class="pc-bubble">' + T.hi + '</p><div class="pc-q">' + T.q.map((q, i) => '<button type="button" data-i="' + i + '">' + q + '</button>').join('') + '<button type="button" class="alt" data-book>' + T.book + '</button></div>' +
+    '<label class="pc-l" for="pcName">' + T.your + '</label><input id="pcName" class="pc-in" type="text" autocomplete="name">' +
+    '<label class="pc-l" for="pcMsg">' + T.msgLabel + '</label><textarea id="pcMsg" class="pc-in" rows="3"></textarea>' +
+    '<a class="pc-go" id="pcGo" target="_blank" rel="noopener">' + T.go + '</a><p class="pc-note">' + T.note + '</p></div>';
+  document.body.appendChild(box);
+  const msg = box.querySelector('#pcMsg'), name = box.querySelector('#pcName'), go = box.querySelector('#pcGo');
+  msg.value = T.msgs[0];
+  const link = () => {
+    const n = name.value.trim();
+    const text = msg.value.trim() + (n ? '\n' + T.sig + n : '');
+    go.href = wa + '?text=' + encodeURIComponent(text);
+  };
+  link();
+  [msg, name].forEach(x => x.addEventListener('input', link));
+  box.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => {
+    box.querySelectorAll('[data-i]').forEach(x => x.classList.toggle('sel', x === b));
+    msg.value = T.msgs[parseInt(b.dataset.i, 10)]; link(); msg.focus({ preventScroll: true });
+  }));
+  box.querySelector('[data-book]').addEventListener('click', () => { closePc(); const a = document.querySelector('[data-book]:not(.pc [data-book])') || document.querySelector('a[href="#reservar"]'); if (a) a.click(); });
+  go.addEventListener('click', () => setTimeout(closePc, 150));
+  let opener = null;
+  function openPc() { opener = document.activeElement; box.hidden = false; requestAnimationFrame(() => box.classList.add('open')); float.setAttribute('aria-expanded', 'true'); }
+  function closePc() { box.classList.remove('open'); float.setAttribute('aria-expanded', 'false'); setTimeout(() => { box.hidden = true; }, 200); if (opener && opener.focus) opener.focus({ preventScroll: true }); }
+  box.querySelector('.pc-x').addEventListener('click', closePc);
+  document.addEventListener('keydown', e => { if (!box.hidden && e.key === 'Escape') closePc(); });
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="https://wa.me/"]');
+    if (a && !a.closest('.pc') && !a.closest('.bk')) { e.preventDefault(); box.hidden || box.classList.contains('open') ? (box.hidden ? openPc() : closePc()) : openPc(); return; }
+    if (!box.hidden && !e.target.closest('.pc')) closePc();
+  });
+})();
