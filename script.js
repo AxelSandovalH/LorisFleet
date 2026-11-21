@@ -335,6 +335,7 @@ const TRIPS = {};
   document.addEventListener('keydown', e => { if (!ov.hidden && e.key === 'Escape') close(); });
 
   boats.forEach(id => TRIPS[id].forEach((t, i) => t.btn.addEventListener('click', () => { pre = { boat: id, trip: i }; })));
+  document.querySelectorAll('a[data-boat]').forEach(l => l.addEventListener('click', () => { const id = l.dataset.boat; if (TRIPS[id]) pre = { boat: id, trip: featuredIdx(id) }; }));
   document.addEventListener('click', e => {
     const a = e.target.closest('a[href="#reservar"],[data-book]');
     if (a) { e.preventDefault(); open(); }
