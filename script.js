@@ -394,3 +394,26 @@ const TRIPS = {};
     if (!box.hidden && !e.target.closest('.pc')) closePc();
   });
 })();
+
+// FAQ: búsqueda y categorías
+(() => {
+  const list = document.getElementById('faqList');
+  if (!list) return;
+  const items = [...list.querySelectorAll('details')];
+  const q = document.getElementById('faqQ'), none = document.getElementById('faqNone');
+  const chips = [...document.querySelectorAll('.faq-chip')];
+  let cat = 'all';
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function filter() {
+    const term = norm(q.value.trim());
+    let n = 0;
+    items.forEach(d => {
+      const ok = (cat === 'all' || d.dataset.cat === cat) && (!term || norm(d.textContent).includes(term));
+      d.hidden = !ok; if (ok) n++;
+    });
+    none.hidden = n > 0;
+  }
+  q.addEventListener('input', filter);
+  chips.forEach(c => c.addEventListener('click', () => { cat = c.dataset.c; chips.forEach(x => x.classList.toggle('active', x === c)); filter(); }));
+  items.forEach(d => d.addEventListener('toggle', () => { if (d.open) items.forEach(o => { if (o !== d) o.open = false; }); }));
+})();

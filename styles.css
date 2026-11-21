@@ -470,3 +470,32 @@ h1,h2,h3{text-wrap:balance}
 .pc-note{margin:10px 0 0;font-size:12px;color:#4b5563;text-align:center}
 @media (max-width:480px){.pc{right:16px;bottom:96px}}
 @media (prefers-reduced-motion:reduce){.pc{transition:none}}
+
+/* faq mejorado */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.faq{display:grid;grid-template-columns:300px 1fr;gap:48px;align-items:start}
+.faq-help{position:sticky;top:96px;background:var(--navy);color:#fff;border-radius:22px;padding:28px}
+.faq-help .eyebrow{color:var(--accent);margin-bottom:8px}
+.faq-help p:not(.eyebrow){margin:0 0 20px;color:rgba(255,255,255,.85);line-height:1.55}
+.faq-call{display:block;text-align:center;margin-top:14px;font-size:14px;color:rgba(255,255,255,.75);text-decoration:underline}
+.faq-tools{display:grid;gap:14px;margin-bottom:22px}
+.faq-search input{width:100%;font:inherit;font-size:16px;padding:15px 18px 15px 48px;border:2px solid var(--line);border-radius:14px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 16px center}
+.faq-search input:focus{outline:none;border-color:var(--accent)}
+.faq-chips{display:flex;gap:8px;flex-wrap:wrap}
+.faq-chip{font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;transition:all .15s}
+.faq-chip:hover{border-color:var(--navy);color:var(--navy)}
+.faq-chip.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.faq-list{counter-reset:q}
+.faq-list details[hidden]{display:none}
+.faq-list details{counter-increment:q}
+.faq-list summary span::before{content:counter(q,decimal-leading-zero)}
+.faq-list summary{font-size:clamp(20px,2.2vw,28px);padding:22px 0}
+.faq-list summary:hover{color:#1d4f8a}
+.faq-list details[open] summary{color:var(--navy)}
+.faq-list details p{margin:0 0 24px 54px;font-size:17px;line-height:1.7;animation:faqIn .3s ease}
+@keyframes faqIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.faq-none{padding:28px;border-radius:16px;background:var(--sand);color:var(--muted)}
+.faq-none[hidden]{display:none}
+@media (max-width:1024px){.faq{grid-template-columns:1fr;gap:28px}.faq-help{position:static;order:2}}
+@media (max-width:768px){.faq-list details p{margin-left:0}}
+@media (prefers-reduced-motion:reduce){.faq-list details p{animation:none}}
